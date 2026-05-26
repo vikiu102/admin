@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, HostListener } from '@angular/core';
 import { AppService } from '../app.service';
 
 @Component({
@@ -12,6 +12,7 @@ import { AppService } from '../app.service';
       </div>
       <button class="btn btn-primary" (click)="isPlaceModalOpen.set(true)">+ Thêm địa điểm mới</button>
     </div>
+
     <div class="card">
       <div class="table-toolbar">
         <div class="search-box">
@@ -53,27 +54,88 @@ import { AppService } from '../app.service';
       </table>
     </div>
 
-    <!-- Modal Thêm địa điểm -->
     <div class="modal-overlay" [class.open]="isPlaceModalOpen()" (click)="handleModalClick($event)">
-      <div class="modal">
+      <div class="modal" style="overflow: visible;">
         <h2>Thêm địa điểm mới</h2>
-        <div class="form-row"><label class="form-label">Tên địa điểm *</label><input class="form-input" type="text" placeholder="VD: Vịnh Hạ Long"></div>
-        <div class="form-row-2">
-          <div class="form-row"><label class="form-label">Tỉnh thành *</label><select class="form-select"><option>Quảng Ninh</option></select></div>
-          <div class="form-row"><label class="form-label">Danh mục *</label><select class="form-select"><option>Biển đảo</option></select></div>
+        <div class="form-row">
+          <label class="form-label">Tên địa điểm *</label>
+          <input class="form-input" type="text" placeholder="VD: Vịnh Hạ Long">
         </div>
+        
+        <div class="form-row-2">
+          
+          <div class="form-row prov-select-container" style="position: relative;">
+            <label class="form-label">Tỉnh thành *</label>
+            <div class="form-select" (click)="isProvSelectOpen.set(!isProvSelectOpen())" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+              <span [style.color]="selectedProvince() ? 'var(--text-main)' : 'var(--text-light)'">
+                {{ selectedProvince() || 'Chọn tỉnh thành...' }}
+              </span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--text-sub)"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+
+            @if (isProvSelectOpen()) {
+              <div class="custom-dropdown-menu">
+                <div class="dropdown-search">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:var(--text-light);position:absolute;left:18px;top:18px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" placeholder="Tìm nhanh..." autofocus
+                         (input)="provSearchQuery.set($event.target.value)"
+                         (click)="$event.stopPropagation()">
+                </div>
+                <div class="dropdown-list">
+                  @for (prov of filteredProvList(); track prov) {
+                    <div class="dropdown-item" (click)="selectProvince(prov); $event.stopPropagation()">
+                      {{prov}}
+                    </div>
+                  }
+                  @if (filteredProvList().length === 0) {
+                    <div class="dropdown-item" style="color: var(--text-light); text-align: center; cursor: default;">
+                      Không tìm thấy tỉnh thành
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="form-row">
+            <label class="form-label">Danh mục *</label>
+            <select class="form-select">
+              <option value="" disabled selected hidden>Chọn danh mục...</option>
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{cat}}</option>
+              }
+            </select>
+          </div>
+        </div>
+        
         <div class="modal-footer">
           <button class="btn btn-outline" (click)="isPlaceModalOpen.set(false)">Hủy</button>
           <button class="btn btn-primary" (click)="isPlaceModalOpen.set(false); appService.showToast('Thêm thành công!')">Lưu</button>
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .custom-dropdown-menu {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: #ffffff; border: 1px solid var(--border); border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; overflow: hidden;
+      animation: dropDownIn 0.15s ease-out;
+    }
+    @keyframes dropDownIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+    .dropdown-search { padding: 10px; border-bottom: 1px solid var(--border); background: #f9fafb; position: relative; }
+    .dropdown-search input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; transition: border-color 0.2s; }
+    .dropdown-search input:focus { border-color: var(--accent); }
+    .dropdown-list { max-height: 200px; overflow-y: auto; }
+    .dropdown-list .dropdown-item { padding: 10px 14px; font-size: 13px; cursor: pointer; color: var(--text-main); transition: background 0.1s; }
+    .dropdown-list .dropdown-item:hover { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+  `]
 })
 export class PlacesComponent {
   appService = inject(AppService);
   isPlaceModalOpen = signal(false);
   
+  // DỮ LIỆU ĐỊA ĐIỂM BẢNG
   placesData = signal([
     { name: 'Vịnh Hạ Long', province: 'Quảng Ninh', category: 'Biển đảo', status: 'active', emoji: '🌊' },
     { name: 'Phố cổ Hội An', province: 'Quảng Nam', category: 'Di sản văn hóa', status: 'active', emoji: '🏮' },
@@ -89,7 +151,51 @@ export class PlacesComponent {
     return this.placesData().filter(p => p.name.toLowerCase().includes(q) || p.province.toLowerCase().includes(q));
   });
 
+  // ==========================================
+  // DỮ LIỆU CHO DROPDOWN THÊM MỚI
+  // ==========================================
+  categories = ['Biển đảo', 'Núi rừng', 'Di sản văn hóa', 'Đô thị', 'Khu du lịch sinh thái', 'Du lịch tâm linh', 'Khu nghỉ dưỡng', 'Khu vui chơi giải trí', 'Hang động'];
+  
+  provincesList = [
+    'An Giang', 'Bà Rịa - Vũng Tàu', 'Bắc Giang', 'Bắc Kạn', 'Bạc Liêu', 'Bắc Ninh', 'Bến Tre', 'Bình Định', 
+    'Bình Dương', 'Bình Phước', 'Bình Thuận', 'Cà Mau', 'Cần Thơ', 'Cao Bằng', 'Đà Nẵng', 'Đắk Lắk', 'Đắk Nông', 
+    'Điện Biên', 'Đồng Nai', 'Đồng Tháp', 'Gia Lai', 'Hà Giang', 'Hà Nam', 'Hà Nội', 'Hà Tĩnh', 'Hải Dương', 
+    'Hải Phòng', 'Hậu Giang', 'Hòa Bình', 'Hưng Yên', 'Khánh Hòa', 'Kiên Giang', 'Kon Tum', 'Lai Châu', 
+    'Lâm Đồng', 'Lạng Sơn', 'Lào Cai', 'Long An', 'Nam Định', 'Nghệ An', 'Ninh Bình', 'Ninh Thuận', 'Phú Thọ', 
+    'Phú Yên', 'Quảng Bình', 'Quảng Nam', 'Quảng Ngãi', 'Quảng Ninh', 'Quảng Trị', 'Sóc Trăng', 'Sơn La', 
+    'Tây Ninh', 'Thái Bình', 'Thái Nguyên', 'Thanh Hóa', 'Thừa Thiên Huế', 'Tiền Giang', 'TP Hồ Chí Minh', 
+    'Trà Vinh', 'Tuyên Quang', 'Vĩnh Long', 'Vĩnh Phúc', 'Yên Bái'
+  ];
+
+  isProvSelectOpen = signal(false);
+  provSearchQuery = signal('');
+  selectedProvince = signal('');
+
+  // Lọc 63 tỉnh thành dựa trên ô tìm kiếm
+  filteredProvList = computed(() => {
+    const q = this.provSearchQuery().toLowerCase();
+    return this.provincesList.filter(p => p.toLowerCase().includes(q));
+  });
+
+  selectProvince(prov: string) {
+    this.selectedProvince.set(prov);
+    this.isProvSelectOpen.set(false);
+    this.provSearchQuery.set(''); // Xóa text tìm kiếm sau khi chọn
+  }
+
+  // Tắt dropdown nếu click ra ngoài vùng chọn
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.prov-select-container') && this.isProvSelectOpen()) {
+      this.isProvSelectOpen.set(false);
+    }
+  }
+
   handleModalClick(event: MouseEvent) {
-    if ((event.target as HTMLElement).classList.contains('modal-overlay')) this.isPlaceModalOpen.set(false);
+    if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
+      this.isPlaceModalOpen.set(false);
+      this.isProvSelectOpen.set(false);
+    }
   }
 }

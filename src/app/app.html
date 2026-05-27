@@ -1,7 +1,6 @@
 @if (!appService.isLoggedIn()) {
   <app-login></app-login>
 } @else {
-  <!-- GIAO DIỆN APP CHÍNH -->
   <header class="header">
     <div class="header-brand">
       <div class="logo-icon">
@@ -15,7 +14,6 @@
       @switch (appService.currentPage()) {
         @case ('dashboard') { TỔNG QUAN }
         @case ('places') { ĐỊA ĐIỂM DU LỊCH }
-        @case ('provinces') { TỈNH THÀNH }
         @case ('comments') { BÌNH LUẬN }
       }
     </div>
@@ -28,7 +26,6 @@
       <ul class="sidebar-nav">
         <li><a [class.active]="appService.currentPage() === 'dashboard'" (click)="appService.currentPage.set('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Tổng quan</a></li>
         <li><a [class.active]="appService.currentPage() === 'places'" (click)="appService.currentPage.set('places')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Địa điểm du lịch</a></li>
-        <li><a [class.active]="appService.currentPage() === 'provinces'" (click)="appService.currentPage.set('provinces')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Tỉnh thành</a></li>
         <li><a [class.active]="appService.currentPage() === 'comments'" (click)="appService.currentPage.set('comments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Bình luận</a></li>
       </ul>
       <div class="sidebar-footer">
@@ -41,7 +38,6 @@
         @switch (appService.currentPage()) {
           @case ('dashboard') { <app-dashboard></app-dashboard> }
           @case ('places') { <app-places></app-places> }
-          @case ('provinces') { <app-provinces></app-provinces> }
           @case ('comments') { <app-comments></app-comments> }
         }
       </div>
@@ -49,5 +45,4 @@
   </div>
 }
 
-<!-- Toast Notification (Dùng chung cho toàn App) -->
 <div class="toast" [class.show]="appService.isToastVisible()">{{ appService.toastMessage() }}</div>

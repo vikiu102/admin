@@ -3,13 +3,14 @@ import { AppService } from './app.service';
 import { LoginComponent } from './login/login';
 import { DashboardComponent } from './dashboard/dashboard';
 import { PlacesComponent } from './places/places';
-import { ProvincesComponent } from './provinces/provinces';
+// ĐÃ XÓA: import { ProvincesComponent }
 import { CommentsComponent } from './comments/comments';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [LoginComponent, DashboardComponent, PlacesComponent, ProvincesComponent, CommentsComponent],
+  // ĐÃ XÓA: ProvincesComponent ra khỏi mảng imports
+  imports: [LoginComponent, DashboardComponent, PlacesComponent, CommentsComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
   encapsulation: ViewEncapsulation.None

@@ -48,13 +48,41 @@ export class LoginComponent {
   showPassword = signal<boolean>(false);
   loginError = signal<boolean>(false);
 
-  handleLogin(event: any, user: string, pass: string) {
+  async handleLogin(event: any, user: string, pass: string) {
     event.preventDefault();
-    if (user === 'admin' && pass === '123456') {
-      this.loginError.set(false);
-      localStorage.setItem('isLoggedIn', 'true');
-      this.appService.isLoggedIn.set(true);
-    } else {
+    
+    try {
+      // Gọi API đăng nhập của Spring Boot
+      const response = await fetch('http://localhost:8000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: user,
+          password: pass
+        })
+      });
+
+      if (response.ok) {
+        // Hứng chuỗi Token do Spring Boot trả về
+        const token = await response.text(); 
+        
+        this.loginError.set(false);
+        
+        // 1. Lưu Token thật vào localStorage để dùng cho các API sau
+        localStorage.setItem('adminToken', token); 
+        
+        // 2. Giữ nguyên các logic chuyển trạng thái cũ của bạn
+        localStorage.setItem('isLoggedIn', 'true'); 
+        this.appService.isLoggedIn.set(true);
+        
+      } else {
+        // Sai user/pass hoặc lỗi từ Backend
+        this.loginError.set(true); 
+      }
+    } catch (error) {
+      console.error("Lỗi khi kết nối đến Server Backend: ", error);
       this.loginError.set(true);
     }
   }

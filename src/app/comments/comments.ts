@@ -34,7 +34,7 @@ import { AppService } from '../app.service';
             <th>Nội dung bình luận</th>
             <th style="width:110px">Ngày đăng</th>
             <th style="width:110px">Trạng thái</th>
-            <th style="width:120px">Thao tác</th>
+            <th style="width:90px">Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -59,16 +59,21 @@ import { AppService } from '../app.service';
               </td>
               <td>
                 <div class="action-btns">
-                  <div class="action-btn" (click)="openViewModal(c)" title="Xem chi tiết">
+                  <div class="action-btn" (click)="openViewModal(c)" title="Xem chi tiết & Cập nhật">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
                   </div>
-                  <div class="action-btn hide" (click)="appService.showToast('Đã ẩn bình luận')" title="Ẩn bình luận">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  </div>
-                  <div class="action-btn del" (click)="appService.showToast('Đã xóa bình luận')" title="Xóa bình luận">
+                  
+                  <div class="action-btn del" (click)="deleteComment(c)" title="Xóa bình luận">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                   </div>
                 </div>
+              </td>
+            </tr>
+          }
+          @if (filteredComments().length === 0) {
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-light);">
+                Không tìm thấy bình luận nào.
               </td>
             </tr>
           }
@@ -113,14 +118,22 @@ import { AppService } from '../app.service';
             <div style="font-size: 14px; color: var(--text-main); line-height: 1.6; padding-top: 14px; border-top: 1px dashed #d1d5db; font-style: italic;">
               "{{selectedComment().content}}"
             </div>
+          </div>
 
+          <div class="form-row">
+            <label class="form-label">Cập nhật trạng thái duyệt:</label>
+            <select class="form-select" #commentStatusSelect [value]="selectedComment().status">
+              <option value="approved">Đã duyệt</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="hidden">Đã ẩn</option>
+            </select>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="isViewModalOpen.set(false)">Đóng</button>
+            <button class="btn btn-primary" (click)="updateStatus(commentStatusSelect.value)">Lưu thay đổi</button>
           </div>
         }
-
-        <div class="modal-footer">
-          <button class="btn btn-outline" (click)="isViewModalOpen.set(false)">Đóng</button>
-          <button class="btn btn-primary" (click)="isViewModalOpen.set(false); appService.showToast('Tính năng đang được phát triển!')">Phản hồi người dùng</button>
-        </div>
       </div>
     </div>
   `
@@ -129,25 +142,14 @@ export class CommentsComponent {
   Math = Math;
   appService = inject(AppService);
 
-  commentsData = signal([
-    { user: "Trần Minh Khoa", location: "Vịnh Hạ Long, Quảng Ninh", content: "Cảnh đẹp ngoài sức tưởng tượng, nước biển xanh trong vắt! Nếu đi vào mùa hè thì tuyệt vời, đồ ăn hải sản trên thuyền cũng rất tươi ngon. Rất đáng tiền!", date: "2026-05-12", status: "approved" },
-    { user: "Lê Thị Hương", location: "Phố cổ Hội An, Quảng Nam", content: "Đèn lồng rực rỡ về đêm, không khí rất lãng mạn. Lần sau mình sẽ rủ thêm gia đình đi cùng.", date: "2026-05-10", status: "approved" },
-    { user: "Phạm Quốc Bảo", location: "Sapa, Lào Cai", content: "Ruộng bậc thang mùa lúa chín vàng óng, tuyệt vời! Đi cáp treo lên Fansipan hơi ù tai nhưng cảnh nhìn từ trên xuống thì đỉnh của chóp.", date: "2026-05-08", status: "pending" },
-    { user: "Ngô Thị Thu Thảo", location: "Đà Lạt, Lâm Đồng", content: "Thời tiết mát mẻ, hoa nở khắp nơi. Rất thích hợp nghỉ dưỡng.", date: "2026-05-07", status: "approved" },
-    { user: "Hoàng Đức Trung", location: "Mũi Né, Bình Thuận", content: "Đồi cát bay đẹp nhưng trời nắng quá, nhớ mang kem chống nắng. Đi xe Jeep trên đồi cát rất vui.", date: "2026-05-05", status: "approved" },
-    { user: "Đinh Thị Lan Anh", location: "Núi Bà Đen, Tây Ninh", content: "Hành trình leo núi rất thú vị, view từ đỉnh cực đỉnh!", date: "2026-05-04", status: "hidden" },
-    { user: "Vũ Thanh Long", location: "Tràng An, Ninh Bình", content: "Chèo thuyền qua hang động, khung cảnh như tranh vẽ. Nước trong đến mức nhìn thấy cả rong rêu bên dưới.", date: "2026-05-03", status: "approved" },
-    { user: "Bùi Ngọc Linh", location: "Phú Quốc, Kiên Giang", content: "Bãi biển sạch, đồ hải sản tươi ngon, giá cả hợp lý. Nhất định sẽ quay lại lần 2.", date: "2026-05-01", status: "pending" }
-  ]);
+  commentsData = this.appService.commentsData;
 
-  // Các Signal cho tính năng lọc
   commentSearch = signal('');
   commentStatus = signal('all');
   commentsPage = signal(1);
   commentsPerPage = 6;
   isCommentDropdownOpen = signal(false);
 
-  // --- TRẠNG THÁI CHO MODAL XEM ---
   selectedComment = signal<any>(null);
   isViewModalOpen = signal(false);
 
@@ -185,16 +187,43 @@ export class CommentsComponent {
   prevPage() { if (this.commentsPage() > 1) this.commentsPage.set(this.commentsPage() - 1); }
   nextPage() { if (this.commentsPage() < this.totalPages()) this.commentsPage.set(this.commentsPage() + 1); }
 
-  // --- HÀM MỞ/ĐÓNG MODAL CHI TIẾT ---
   openViewModal(comment: any) {
     this.selectedComment.set(comment);
     this.isViewModalOpen.set(true);
   }
 
   handleModalClick(event: MouseEvent) {
-    // Đóng Modal nếu click ra vùng xám bên ngoài
     if ((event.target as HTMLElement).classList.contains('modal-overlay')) {
       this.isViewModalOpen.set(false);
+    }
+  }
+
+  // ==========================================
+  // HÀM XỬ LÝ DUYỆT VÀ XÓA BÌNH LUẬN
+  // ==========================================
+  
+  // Đổi trạng thái từ trong Cửa sổ chi tiết
+  updateStatus(newStatus: string) {
+    const current = this.selectedComment();
+    if (current) {
+      this.commentsData.update(comments =>
+        comments.map(c => c === current ? { ...c, status: newStatus } : c)
+      );
+      this.appService.showToast('Cập nhật trạng thái duyệt thành công!');
+    }
+    this.isViewModalOpen.set(false);
+  }
+
+  // Xóa vĩnh viễn (Nút thùng rác)
+  deleteComment(comment: any) {
+    if (confirm(`Bạn có chắc chắn muốn xóa bình luận của "${comment.user}" không?`)) {
+      this.commentsData.update(comments => comments.filter(c => c !== comment));
+      this.appService.showToast(`Đã xóa bình luận của: ${comment.user}`);
+      
+      // Nếu xóa hết trang hiện tại, lùi lại 1 trang
+      if (this.paginatedComments().length === 0 && this.commentsPage() > 1) {
+        this.commentsPage.set(this.commentsPage() - 1);
+      }
     }
   }
 }
